@@ -487,16 +487,17 @@ class GPActionFoldAttribute : public GPAction {
 
     int res;
 
+    std::cout << "Attribute key:" << std::endl;
+    for (const auto &attr_key : attr_list_) {
+      std::cout << "  " << attr_key << std::endl;
+    }
+
     std::cout << "Vertex label:" << std::endl;
     std::set<Label> vertex_label_list;
     res = GetLabelList(gp.label_dict(), vertex_label_name_list_,
                        vertex_label_list);
     if (res < 0) return res;
 
-    std::cout << "Attribute key:" << std::endl;
-    for (const auto &attr_key : attr_list_) {
-      std::cout << "  " << attr_key << std::endl;
-    }
 
     std::cout << "Edge label" << std::endl;
     std::set<Label> edge_label_list;
@@ -504,10 +505,25 @@ class GPActionFoldAttribute : public GPAction {
                        edge_label_list);
     if (res < 0 ) return res;
 
+
+    if (attr_list_.empty()) {
+      std::cout << "input format is v-label e-label pairs" << std::endl;
+      if (vertex_label_name_list_.size() != edge_label_name_list_.size()) {
+        std::cout << "the number of v labels and e labels are not the same" << std::endl;
+        return -1;
+      }
+      for (size_t label_idx = 0; label_idx < vertex_label_name_list_.size(); label_idx++) {
+        Label v_label_id = gp.label_dict().GetLabelID(vertex_label_name_list_[label_idx]);
+        Label e_label_id = gp.label_dict().GetLabelID(edge_label_name_list_[label_idx]);
+        ve_label_map_[v_label_id].insert(e_label_id);
+      }
+    }
+
     std::cout << "Fold:" << std::endl;
     res = FoldAttribute(gp, vertex_label_list, attr_list_,
-                        edge_label_list);
+                        ve_label_map_);
     if (res < 0) return res;
+
 
     return res;
   }
@@ -515,6 +531,7 @@ class GPActionFoldAttribute : public GPAction {
  private:
   std::vector<std::string> vertex_label_name_list_;
   std::vector<std::string> edge_label_name_list_;
+  std::map<Label, std::set<Label>> ve_label_map_;
   std::set<std::string> attr_list_;
 };
 
